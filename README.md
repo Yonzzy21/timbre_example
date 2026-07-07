@@ -2,13 +2,11 @@
 
 TimbreFrame is a multichannel additive synthesis project. A source recording is analyzed into harmonic partials, those partials are turned into a JSON preset, and the browser frontend plays them as up to 24 independent sine channels (one speaker per partial in the installation).
 
-The main path from a new recording to a playable instrument:
-
 ```
-source audio  →  analyze.py  →  presets.json  →  front_end
+source audio  →  analyze.py  →  presets.json  →  front_end/presets.json  →  browser
 ```
 
-Use `sound_decomposition_backend.ipynb` when you need to explore and tune the analysis before committing settings to `analyze.py`.
+Use `sound_decomposition_backend.ipynb` to explore and tune analysis before committing settings to `analyze.py`.
 
 ---
 
@@ -16,14 +14,15 @@ Use `sound_decomposition_backend.ipynb` when you need to explore and tune the an
 
 ```
 timbreframe/
-├── analyze.py                      # CLI: analyze audio and write presets.json
-├── presets.json                    # Instrument library consumed by the frontend
+├── analyze.py                        # CLI: analyze audio and write presets
+├── presets.json                      # Instrument library (written by analyze.py)
 ├── sound_decomposition_backend.ipynb # Interactive R&D for analysis and synthesis
-├── assets/                         # Source recordings (WAV/MP3)
+├── assets/                           # Source recordings (WAV/MP3)
 └── front_end/
-    ├── index.html + main.js        # Loads ../presets.json
-    ├── differentUImain/            # Extended UI (visualizer, NexusUI controls)
-    └── basic_tryouts/              # Earlier UI experiments
+    ├── index.html                    # UI: preset picker, ADSR, visualizer
+    ├── main.js                       # Web Audio synthesis (24-channel)
+    ├── styles.css
+    └── presets.json                  # Copy of presets.json — loaded by the browser
 ```
 
 ---
@@ -36,7 +35,7 @@ timbreframe/
 2. Finds spectral peaks (target: **24 harmonics** above 200 Hz).
 3. Simulates the same multichannel synthesis the frontend uses (ADSR, vibrato, amplitude modulation, per-partial attack).
 4. Normalizes magnitudes so the loudest partial peaks at `0.5`.
-5. Appends or overwrites an entry in `presets.json`.
+5. Appends or overwrites an entry in `presets.json` at the repo root.
 
 ### Prerequisites
 
@@ -94,8 +93,6 @@ Each instrument entry contains:
 - `adsr`, `vibrato`, `amplitude_modulation` — envelope and modulation settings
 - `audio_settings` — `sr` and `duration`
 
-The frontend reads this file directly; no extra conversion step.
-
 ### Peak detection notes
 
 During analysis, `analyze.py` prints how many peaks were found:
@@ -103,6 +100,14 @@ During analysis, `analyze.py` prints how many peaks were found:
 - **Exactly 24** — ideal for the 24-channel installation.
 - **Fewer than 24** — try a cleaner sustain segment, or adjust peak-finding in the notebook first.
 - **More than 24** — the list is truncated to 24.
+
+### Sync presets to the frontend
+
+`analyze.py` writes to `presets.json` at the repo root. The frontend loads `front_end/presets.json`, so copy after each run:
+
+```bash
+cp presets.json front_end/presets.json
+```
 
 ---
 
@@ -122,31 +127,14 @@ It covers the same pipeline as `analyze.py`, but step by step with plots and aud
 **Typical workflow:**
 
 ```
-notebook (explore + tune)  →  analyze.py (generate preset)  →  frontend (verify)
+notebook (explore + tune)  →  analyze.py  →  cp presets.json  →  frontend
 ```
 
-Once parameters sound right in the notebook, pass the same values to `analyze.py` and commit the resulting `presets.json` entry.
+Once parameters sound right in the notebook, pass the same values to `analyze.py`, copy the preset file, and verify in the browser.
 
 ---
 
-## Getting presets into the frontend
-
-`presets.json` at the repo root is the canonical instrument library. The frontend loads it relative to each UI variant:
-
-| Frontend | Presets path |
-|----------|--------------|
-| `front_end/` | `../presets.json` (repo root) |
-| `front_end/differentUImain/` | `presets.json` (local copy) |
-| `front_end/basic_tryouts/` | local copy |
-
-After running `analyze.py`, copy the updated file to any frontend folder that keeps its own copy:
-
-```bash
-cp presets.json front_end/differentUImain/presets.json
-cp presets.json front_end/presets.json
-```
-
-### Running the frontend
+## Running the frontend
 
 The page must be served over HTTP (not opened as a `file://` URL) so the browser can fetch `presets.json`.
 
@@ -155,9 +143,16 @@ cd front_end
 python -m http.server 8000
 ```
 
-Then open `http://localhost:8000` (or `http://localhost:8000/differentUImain/` for the extended UI).
+Open `http://localhost:8000`.
 
-Use **Stereo preview** when you do not have a 24-channel audio interface. Uncheck it for the real multichannel output path.
+The UI includes:
+
+- **Preset picker** — switch between instruments from `presets.json`
+- **Per-partial sliders** — tune frequency and magnitude per channel
+- **Magnitude multislider** — adjust all partial levels at once (NexusUI)
+- **ADSR envelope** — visual envelope editor; enable "Interactive ADSR" to reshape attack/decay/sustain/release live
+- **Spectrum visualizer** — real-time frequency display while playing
+- **Stereo preview** — pan partials left/right when you do not have a 24-channel audio interface; leave unchecked for the real multichannel output path
 
 ---
 

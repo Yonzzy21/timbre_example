@@ -1,6 +1,7 @@
 // The number of outputs we ask the browser to merge into one multichannel stream.
 // Keep this at 24 for the real installation, but allow a stereo preview mode for testing.
-const NUM_OUTPUTS = 24;
+// 08.05.2026 - set to 8 for testing the Vantec 8 channels - working (each stereo out outputs 2 different sines)
+const NUM_OUTPUTS = 8;
 const PRESET_URL = 'presets.json';
 // Default hold time used by ADSR envelope UI mapping (seconds)
 const ADSR_HOLD = 0.1;

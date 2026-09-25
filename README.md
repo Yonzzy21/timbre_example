@@ -2,8 +2,6 @@
 
 TimbreFrame is a multichannel additive synthesis project. A source recording is analyzed into harmonic partials, those partials are turned into a JSON preset, and the browser frontend plays them as up to 24 independent sine channels (one speaker per partial in the installation).
 
-Project Confluence link: **[https://momath1.atlassian.net/wiki/x/CwCEJw](https://momath1.atlassian.net/wiki/x/CwCEJw)**
-
 ```
 source audio  →  analyze.py  →  presets.json  →  front_end/presets.json  →  browser
 ```
